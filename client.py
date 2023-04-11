@@ -1,6 +1,3 @@
-import socket
-import sys
-import time
 
 
 # This is a sample Python script.
