@@ -1,18 +1,37 @@
+import socket
+import threading
 
 
-# This is a sample Python script.
+username = input("Enter a username: ")
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('', 18000))
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def receive():
+    while True:
+        try:
+            msg = client.recv(1024).decode()
+            if msg == "USER":
+                client.send(username.encode())
+            else:
+                print(msg)
+        except:
+            print("You have left the server.")
+            client.close()
+            break
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+def write():
+    bmsg = ""
+    while bmsg != f"{username}: q":
+        msg = input("")
+        bmsg = f"{username}: {msg}"
+        if bmsg != f"{username}: q":
+            client.send(bmsg.encode())
+    client.close()
+
+receive_thread = threading.Thread(target = receive)
+receive_thread.start()
+
+write_thread = threading.Thread(target=write)
+write_thread.start()

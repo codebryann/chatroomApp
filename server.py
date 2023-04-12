@@ -1,31 +1,50 @@
-import time, socket, sys
+import socket
+import threading
 
-new_socket = socket.socket()
-host_name = socket.gethostname()
-s_ip = socket.gethostbyname(host_name)
-
+host = ''
 port = 18000
 
-new_socket.bind((host_name, port))
-print("Binding successful!")
-print("This is your IP: ", s_ip)
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind((host, port))
+server.listen(1)
 
-name = input('Enter name: ')
+clients = []
+usernames = []
 
-new_socket.listen(1)
+def broadcast(message):
+    for client in clients:
+        client.send(message)
 
-conn, add = new_socket.accept()
+def handle(client):
+    while True:
+        try:
+            message = client.recv(1024)
+            broadcast(message)
+        except:
+            index = clients.index(client)
+            clients.remove(client)
+            client.close()
+            username = usernames[index]
+            broadcast(f"{username} has left the chat".encode())
+            usernames.remove(username)
+            break
 
-print("Received connection from ", add[0])
-print('Connection Established. Connected From: ', add[0])
+def recieve():
+    while True:
+        client, address = server.accept()
+        client.send("Welcome to the server!".encode())
+        print(f"Connected to {address}")
 
-client = (conn.recv(1024)).decode()
-print(client + ' has connected.')
+        client.send("USER".encode())
+        username = client.recv(1024).decode()
+        usernames.append(username)
+        clients.append(client)
 
-conn.send(name.encode())
-while True:
-    message = input('Me : ')
-    conn.send(message.encode())
-    message = conn.recv(1024)
-    message = message.decode()
-    print(client, ':', message)
+        print(f"username of client is {username}!")
+        broadcast(f"{username} has joined the chat!".encode())
+
+        thread = threading.Thread(target=handle, args=(client,))
+        thread.start()
+
+print("Server is ready to recieve messages")
+recieve()
