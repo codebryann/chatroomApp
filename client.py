@@ -4,7 +4,7 @@ import tkinter
 import tkinter.messagebox
 import customtkinter
 
-
+# optional, we can use tkinter to make gui for application
 
 username = input("Enter a username: ")
 
