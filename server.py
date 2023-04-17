@@ -1,8 +1,9 @@
 import socket
 import threading
+import os,sys, time
 
 host = ''
-port = 18000
+port = 18005
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((host, port))
@@ -22,7 +23,7 @@ JOIN_ACCEPT_FLAG = "00010000"
 NEW_USER_FLAG = "00100000"
 QUIT_REQUEST_FLAG = "01000000"#client
 QUIT_ACCEPT_FLAG = "10000000"
-ATTACHMENT_FLAG = 0  #optional extra credit : If this message sends the contents of a file, this field is 1. Otherwise, it is 0.
+ATTACHMENT_FLAG = "100000000"  #optional extra credit : If this message sends the contents of a file, this field is 1. Otherwise, it is 0.
 NUMBER = 0  #If this is a report response message where REPORT_RESPONSE_FLAG=1, this field will be set to X, where X is the number of active users, which is in range [0-3]. Otherwise, it is 0.
 USERNAME = ""  #JOIN_REQUEST_FLAG=1 or JOIN_ACCEPT_FLAG=1 or NEW_USER_FLAG=1 or QUIT_ACCEPT_FLAG=1, this field is the username else its empty
 FILENAME = ""  #extra credit optional name of file being attached
@@ -47,6 +48,24 @@ def handle(client):
                 print("quit request received")
                 client.send(QUIT_ACCEPT_FLAG.encode())
                 break
+            elif(PAYLOAD.decode()==ATTACHMENT_FLAG):
+                print("attachment flag received")
+                FILENAME = client.recv(1024)
+                print(FILENAME.decode())
+                data = client.recv(1024)
+                print(data.decode())
+                for client in clients:
+                    client.send(ATTACHMENT_FLAG.encode())
+                    print("attachment flag sent")
+                    time.sleep(.1)
+                    client.send(FILENAME)
+                    print("filename flag sent")
+                    time.sleep(.1)
+                    client.send(data)
+                    print("file sent")
+                index = clients.index(client)
+                current_time = time.strftime("[%H:%M:%S] ")
+                broadcast((current_time+f"{usernames[index]}: "+data.decode()).encode())
             else:
                 PAYLOAD_LENGTH = len(PAYLOAD.decode())
                 broadcast(PAYLOAD)
@@ -74,9 +93,9 @@ def recieve(client, address):
     run = True
     while run:
         request = client.recv(1024)
-        print("request recieved")
         if request.decode() == REPORT_REQUEST_FLAG:
             print("report request received")
+            time.sleep(.1)
             client.send(REPORT_RESPONSE_FLAG.encode())
             NUMBER = len(usernames)
             print(NUMBER)
@@ -84,8 +103,10 @@ def recieve(client, address):
             if NUMBER > 0:
                 for i in range(0,NUMBER):
                     PAYLOAD += f"{str(i)}. {usernames[i]} at {addresses[i][0]} and port {addresses[i][1]}\n"
+                time.sleep(.1)
                 client.send(PAYLOAD.encode())
             else:
+                time.sleep(.1)
                 client.send("Chatroom is empty".encode())
         elif request.decode() == JOIN_REQUEST_FLAG:
             print("join request")
