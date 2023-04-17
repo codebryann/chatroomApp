@@ -34,33 +34,33 @@ def main():
         if choice == "1":
             client.send(REPORT_REQUEST_FLAG.encode())
             response = client.recv(1024)
-            print("reponse recieved")
             if(response.decode() == REPORT_RESPONSE_FLAG):
                 report = client.recv(1024)
                 print(report.decode())
         elif choice == "2":
-            while True:
-                try:
-                    client.send(JOIN_REQUEST_FLAG.encode())
-                    response = client.recv(1024)
-                    if response.decode() == NEW_USER_FLAG:
-                        USERNAME = input("Enter a username: ")
-                        client.send(USERNAME.encode())
-                    elif response.decode() == JOIN_ACCEPT_FLAG:
-                        receive_thread = threading.Thread(target=receive)
-                        receive_thread.start()
-                        write_thread = threading.Thread(target=write)
-                        write_thread.start()
-                        run = False
-                        break
-                    elif response.decode() == JOIN_REJECT_FLAG:
-                        print("Chatroom is full try again later")
-                        break
-                except:
-                    print("You have left the server.")
-                    client.send("".encode, QUIT_REQUEST_FLAG)
-                    client.close()
+            taken = 0
+            run2 = True
+            client.send(JOIN_REQUEST_FLAG.encode())
+            while run2:
+                response = client.recv(1024)
+                if response.decode() == NEW_USER_FLAG:
+                    if taken > 0:
+                        print("Username already taken, please pick another username!")
+                    USERNAME = input("Enter a username: ")
+                    client.send(USERNAME.encode())
+                    taken += 1
+                elif response.decode() == JOIN_ACCEPT_FLAG:
+                    receive_thread = threading.Thread(target=receive)
+                    receive_thread.start()
+                    write_thread = threading.Thread(target=write, args=(USERNAME,))
+                    write_thread.start()
+                    run = False
+                    run2 = False
                     break
+                elif response.decode() == JOIN_REJECT_FLAG:
+                    print("Chatroom is full try again later")
+                    break
+
 
         elif choice == "3":
             print("Thank you for using our program!")
@@ -77,21 +77,28 @@ def receive():
     while True:
         try:
             msg = client.recv(1024)
-            print(msg.decode())
+            if msg.decode() == QUIT_ACCEPT_FLAG:
+                break
+            else:
+                print(msg.decode())
         except:
             break
 
 
-def write():
+def write(USERNAME):
+    time.sleep(.1)
     PAYLOAD = ""
     while PAYLOAD != f"{USERNAME}: q":
-        PAYLOAD = f"{USERNAME}: " + input(USERNAME+": ")
+        PAYLOAD = f"{USERNAME}: " + input()
         if PAYLOAD != f"{USERNAME}: q":
             current_time = time.strftime("[%H:%M:%S] ")
             client.send((current_time+PAYLOAD).encode())
-    client.send(QUIT_REQUEST_FLAG.encode())
+        else:
+            client.send(QUIT_REQUEST_FLAG.encode())
+            break
     response = client.recv(1024)
     if(response.decode() == QUIT_ACCEPT_FLAG):
+        print("You have left the chatroom")
         client.close()
 
 main()
