@@ -25,7 +25,7 @@ flags = "00000000"
 
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('', 18005))
+client.connect(('', 18000))
 
 def main():
     run = True
@@ -89,9 +89,9 @@ def receive():
                 break
             elif msg.decode() == ATTACHMENT_FLAG:
                 FILENAME = client.recv(1024)
-                print(f"file name: {FILENAME.decode()}")
+                #print(f"file name: {FILENAME.decode()}")
                 file = client.recv(1024)
-                print(f"file contents: {file.decode()}")
+                #print(f"file contents: {file.decode()}")
                 msg = client.recv(1024)
                 print(msg.decode())
                 save_thread = threading.Thread(target=savefile, args=(FILENAME, file,))

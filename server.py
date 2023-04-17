@@ -3,7 +3,7 @@ import threading
 import os,sys, time
 
 host = ''
-port = 18005
+port = 18000
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((host, port))
@@ -101,8 +101,9 @@ def recieve(client, address):
             print(NUMBER)
             PAYLOAD = ""
             if NUMBER > 0:
+                PAYLOAD += "Users in chatroom: \n"
                 for i in range(0,NUMBER):
-                    PAYLOAD += f"{str(i)}. {usernames[i]} at {addresses[i][0]} and port {addresses[i][1]}\n"
+                    PAYLOAD += f"{str(i+1)}. {usernames[i]} at {addresses[i][0]} and port {addresses[i][1]}\n"
                 time.sleep(.1)
                 client.send(PAYLOAD.encode())
             else:
