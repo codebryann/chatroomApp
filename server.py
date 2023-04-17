@@ -32,19 +32,24 @@ PAYLOAD = ""  #contents of message
 flags = "00000000"
 
 def broadcast(PAYLOAD):
-    for client in clients:
-        client.send(PAYLOAD)
-    chat_history.append(PAYLOAD)
+    if(PAYLOAD.decode() == QUIT_REQUEST_FLAG):
+        pass
+    else:
+        for client in clients:
+            client.send(PAYLOAD)
+        chat_history.append((PAYLOAD.decode()+"\n").encode())
 
 def handle(client):
     while True:
         try:
             PAYLOAD = client.recv(1024)
-            if(PAYLOAD.decode == QUIT_REQUEST_FLAG):
+            if(PAYLOAD.decode() == QUIT_REQUEST_FLAG):
+                print("quit request received")
                 client.send(QUIT_ACCEPT_FLAG.encode())
                 break
-            PAYLOAD_LENGTH = len(PAYLOAD.decode())
-            broadcast(PAYLOAD)
+            else:
+                PAYLOAD_LENGTH = len(PAYLOAD.decode())
+                broadcast(PAYLOAD)
         except:
             index = clients.index(client)
             clients.remove(client)
@@ -76,7 +81,7 @@ def recieve(client, address):
             NUMBER = len(usernames)
             print(NUMBER)
             PAYLOAD = ""
-            if NUMBER != 0:
+            if NUMBER > 0:
                 for i in range(0,NUMBER):
                     PAYLOAD += f"{str(i)}. {usernames[i]} at {addresses[i][0]} and port {addresses[i][1]}\n"
                 client.send(PAYLOAD.encode())
