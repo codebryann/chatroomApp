@@ -52,9 +52,10 @@ def main():
                 elif response.decode() == JOIN_ACCEPT_FLAG:
                     receive_thread = threading.Thread(target=receive)
                     receive_thread.start()
-                    write_thread = threading.Thread(target=write, args=(USERNAME,))
-                    write_thread.start()
-                    run = False
+                    #write_thread = threading.Thread(target=write, args=(USERNAME,))
+                    #write_thread.start()
+                    #run = False
+                    write(USERNAME)
                     run2 = False
                     break
                 elif response.decode() == JOIN_REJECT_FLAG:
@@ -100,5 +101,6 @@ def write(USERNAME):
     if(response.decode() == QUIT_ACCEPT_FLAG):
         print("You have left the chatroom")
         client.close()
+        return
 
 main()
