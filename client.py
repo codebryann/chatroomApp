@@ -49,7 +49,7 @@ def main():
                     elif response.decode() == JOIN_ACCEPT_FLAG:
                         receive_thread = threading.Thread(target=receive)
                         receive_thread.start()
-                        write_thread = threading.Thread(target=write)
+                        write_thread = threading.Thread(target=write, args=(USERNAME,))
                         write_thread.start()
                         run = False
                         break
@@ -77,16 +77,18 @@ def receive():
     while True:
         try:
             msg = client.recv(1024)
-            print(msg.decode())
+            if msg.decode() == QUIT_ACCEPT_FLAG:
+                print(msg.decode())
         except:
             break
 
 
-def write():
+def write(USERNAME):
     PAYLOAD = ""
     while PAYLOAD != f"{USERNAME}: q":
-        PAYLOAD = f"{USERNAME}: " + input(USERNAME+": ")
+        PAYLOAD = f"{USERNAME}: " + input(f"{USERNAME}: ")
         if PAYLOAD != f"{USERNAME}: q":
+            print("adds time and sends message to server")
             current_time = time.strftime("[%H:%M:%S] ")
             client.send((current_time+PAYLOAD).encode())
     client.send(QUIT_REQUEST_FLAG.encode())

@@ -100,7 +100,7 @@ def recieve(client, address):
                             for message in chat_history: #might move into handle before while true
                                 client.send(message)
                         broadcast(f"{USERNAME} has joined the chat!".encode())
-                        client.send("Welcome to the Chatroom!".encode())
+                        client.send("\nWelcome to the Chatroom!".encode())
                         thread = threading.Thread(target=handle, args=(client,))
                         thread.start()
                         run = False
