@@ -5,14 +5,14 @@ import time
 # optional, we can use tkinter to make gui for application
 
 #FLAGS
-REPORT_REQUEST_FLAG = 0b00000001 #client
-REPORT_RESPONSE_FLAG = 0b00000010
-JOIN_REQUEST_FLAG = 0b00000100 #client
-JOIN_REJECT_FLAG = 0b00001000
-JOIN_ACCEPT_FLAG = 0b00010000
-NEW_USER_FLAG = 0b00100000
-QUIT_REQUEST_FLAG = 0b01000000#client
-QUIT_ACCEPT_FLAG = 0b10000000
+REPORT_REQUEST_FLAG = "00000001" #client
+REPORT_RESPONSE_FLAG = "00000010"
+JOIN_REQUEST_FLAG = "00000100" #client
+JOIN_REJECT_FLAG = "00001000"
+JOIN_ACCEPT_FLAG = "00010000"
+NEW_USER_FLAG = "00100000"
+QUIT_REQUEST_FLAG = "01000000"#client
+QUIT_ACCEPT_FLAG = "10000000"
 ATTACHMENT_FLAG = 0  #optional extra credit : If this message sends the contents of a file, this field is 1. Otherwise, it is 0.
 NUMBER = 0  #If this is a report response message where REPORT_RESPONSE_FLAG=1, this field will be set to X, where X is the number of active users, which is in range [0-3]. Otherwise, it is 0.
 USERNAME = ""  #JOIN_REQUEST_FLAG=1 or JOIN_ACCEPT_FLAG=1 or NEW_USER_FLAG=1 or QUIT_ACCEPT_FLAG=1, this field is the username else its empty
@@ -20,33 +20,42 @@ FILENAME = ""  #extra credit optional name of file being attached
 PAYLOAD_LENGTH = 0  #length of message in characters
 PAYLOAD = ""  #contents of message
 
-flags = 0b00000000000000
+flags = "00000000"
 
-username = ""
+
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(('', 18000))
 
-flags = 00000000000000
-def receive():
-    while True:
-        print("Choose an option (1, 2, or 3):")
-        choice = input("1.Get a report of the chatroom from the server.\n2.Request to join the chatroom.\n3.Quit the program\n")
-
+def main():
+    run = True
+    while run:
+        print("Choose an option")
+        choice = input("1.Get a report of the chatroom from the server.\n2.Request to join the chatroom.\n3.Quit the program\n:")
         if choice == "1":
-            client.send("".encode, REPORT_REQUEST_FLAG)
+            client.send(REPORT_REQUEST_FLAG.encode())
+            response = client.recv(1024)
+            print("reponse recieved")
+            if(response.decode() == REPORT_RESPONSE_FLAG):
+                report = client.recv(1024)
+                print(report.decode())
         elif choice == "2":
             while True:
                 try:
-                    msg = client.recv(1024, flags)
-                    if flags == NEW_USER_FLAG:
-                        username = input("Enter a username: ")
-                        client.send(username.encode())
-                    elif flags == JOIN_ACCEPT_FLAG:
-                        write_thread = threading.Thread(target=write(username))
+                    client.send(JOIN_REQUEST_FLAG.encode())
+                    response = client.recv(1024)
+                    if response.decode() == NEW_USER_FLAG:
+                        USERNAME = input("Enter a username: ")
+                        client.send(USERNAME.encode())
+                    elif response.decode() == JOIN_ACCEPT_FLAG:
+                        receive_thread = threading.Thread(target=receive)
+                        receive_thread.start()
+                        write_thread = threading.Thread(target=write)
                         write_thread.start()
-                        connectedtochat = False
-                    else:
-                        print(msg.decode())
+                        run = False
+                        break
+                    elif response.decode() == JOIN_REJECT_FLAG:
+                        print("Chatroom is full try again later")
+                        break
                 except:
                     print("You have left the server.")
                     client.send("".encode, QUIT_REQUEST_FLAG)
@@ -55,41 +64,34 @@ def receive():
 
         elif choice == "3":
             print("Thank you for using our program!")
-            client.send("".encode(), QUIT_REQUEST_FLAG)
-            break
+            client.send(QUIT_REQUEST_FLAG.encode())
+            response = client.recv(1024)
+            if(response.decode() == QUIT_ACCEPT_FLAG):
+                break
         else:
             print("Invalid choice")
 
 
 
-
-    """"
+def receive():
     while True:
         try:
-            msg = client.recv(1024, flags)
-            if flags == NEW_USER_FLAG:
-                username = input("Enter a unique username: ")
-                client.send(username.encode())
-            else:
-                print(msg.decode())
+            msg = client.recv(1024)
+            print(msg.decode())
         except:
-            print("You have left the server.")
-            client.send("".encode(), QUIT_REQUEST_FLAG)
-            client.close()
-            break"""
+            break
+
 
 def write():
     PAYLOAD = ""
-    while PAYLOAD != f"{username}: q":
-        PAYLOAD = f"{username}: " + input(username+": ")
-        if PAYLOAD != f"{username}: q":
+    while PAYLOAD != f"{USERNAME}: q":
+        PAYLOAD = f"{USERNAME}: " + input(USERNAME+": ")
+        if PAYLOAD != f"{USERNAME}: q":
             current_time = time.strftime("[%H:%M:%S] ")
-            client.send((current_time+PAYLOAD).encode(), flags)
-    client.send("".encode(), QUIT_REQUEST_FLAG)
-    client.close()
+            client.send((current_time+PAYLOAD).encode())
+    client.send(QUIT_REQUEST_FLAG.encode())
+    response = client.recv(1024)
+    if(response.decode() == QUIT_ACCEPT_FLAG):
+        client.close()
 
-receive_thread = threading.Thread(target = receive)
-receive_thread.start()
-
-write_thread = threading.Thread(target=write)
-write_thread.start()
+main()
